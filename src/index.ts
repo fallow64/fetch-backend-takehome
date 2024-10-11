@@ -76,4 +76,4 @@ new Elysia()
     .delete("/reset", async () => {
         await resetDb();
     })
-    .listen(process.env.PORT ?? 8000);
+    .listen(8000);

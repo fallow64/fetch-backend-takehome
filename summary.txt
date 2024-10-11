@@ -1,0 +1,44 @@
+----------------------------------------------------------------------------------------------------
+1. Why did you choose the tools, libraries, and language you used for the coding exercise?
+
+I chose the following tech stack:
+   - Prisma, SQLite, Elysia, Bun, TypeScript
+
+I chose these tools because they were the most familiar to me. I started the project with Go to
+learn a bit more about Go and web servers, but I found myself Googling a lot of questions. During
+the info session, I heard that "Fetch will teach you Go," so I'd rather showcase my experience
+than stumble through a language I'm not confident in.
+
+----------------------------------------------------------------------------------------------------
+2. What are the advantages and disadvantages of your solution?
+
+Prisma / SQLite
+  - Pros:
+      - Easy-to-read database code with Prisma.
+      - Local file databases with SQLite, making local testing deployments easy.
+  - Cons:
+      - A highly-involved ORM like Prisma can lead to hidden inefficient queries.
+      - While SQLite is a reasonable choice for file-based databases, it is not optimal for
+        a cloud-based solution.
+
+Elysia / Bun / TypeScript
+  - Pros:
+      - Types in JavaScript are an essential in 2024, and heavily improves developer experience.
+      - Elysia is many times more faster than most other back-end frameworks, and relies on Bun,
+        which is also faster than Node.
+      - Bun supports TypeScript out-of-the-box.
+  - Cons:
+      - Bun is a newer JavaScript runtime that only recently hit 1.0, and shouldn't be trusted
+        with enterprise code.
+      - Elysia also just hit 1.0, and has a smaller ecosystem.
+
+There is also a disadvantage of how I structed my code. I have two files: 'db.ts' and 'index.ts'.
+The database file has sole access to the database connection, so refactoring
+would be needed to give access to other/new files. Additionally, if I was given a task such as
+adding user authentication and relating transactions to users, I would have to split up 'db.ts'.
+
+I chose to structure it like this due to the small scope of the project. It would be overkill
+to seperate the logic into more files.
+
+----------------------------------------------------------------------------------------------------
+3. What has been a favorite school/personal project thus far? What about it that challenged you?

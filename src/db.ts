@@ -1,6 +1,6 @@
 import { Payer, Prisma, PrismaClient, Transaction } from "@prisma/client";
 
-export const prisma = new PrismaClient({
+const prisma = new PrismaClient({
     log: ["warn", "error"],
 });
 
