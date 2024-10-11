@@ -1,7 +1,7 @@
 import { Payer, Prisma, PrismaClient, Transaction } from "@prisma/client";
 
 export const prisma = new PrismaClient({
-    // log: ["query", "info", "warn", "error"],
+    log: ["warn", "error"],
 });
 
 /**
@@ -12,14 +12,15 @@ export const prisma = new PrismaClient({
  * @param points amount of points to be added - should be an integer greater than 0
  * @param timestamp when the transaction took place
  * @returns the created transaction object
+ * @throws {RangeError} if points is non-integer or less than 1
  */
 export async function createTransaction(
     payer: string,
     points: number,
     timestamp: Date
 ): Promise<Transaction> {
-    if (!Number.isInteger(points)) throw new Error("'points' not an integer");
-    if (points <= 0) throw new Error("'points' should be greater than 0");
+    if (!Number.isInteger(points)) throw new RangeError("'points' must be an integer");
+    if (points < 1) throw new RangeError("'points' must be greater than 0");
 
     const dbPayer = await getOrCreatePayer(payer);
     await prisma.payer.update({
@@ -43,12 +44,14 @@ export async function createTransaction(
  * ```
  * @returns balances in the form of object described above
  */
-export async function getBalances(): Promise<{ [payer: string]: number }> {
+export async function getBalances(): Promise<Record<string, number>> {
     const payers = await prisma.payer.findMany({
         select: { name: true, balance: true },
     });
 
-    const result: { [payer: string]: number } = {};
+    console.log(payers);
+
+    const result: Record<string, number> = {};
     for (const payer of payers) {
         result[payer.name] = payer.balance;
     }
@@ -61,16 +64,20 @@ export async function getBalances(): Promise<{ [payer: string]: number }> {
  * If 'payerName' is specified, then only that payer's points will be used. The return value
  * is in the form of:
  * ```
- * [{ "payer1": -10 }, { "payer2": -50 }]
+ * [{ "payer": "PAYER1", "points": -100 }, { "payer": "PAYER1", "points": -200 }]
  * ```
  *
  * @param points point to spend
- * @param payerName optional, specify which payer to spend points from
+ * @param payerName specify which payer to spend points from
  * @returns array of payers and how many points were used, in the format above
+ * @throws {RangeError} if points is non-integer or less than 1
  */
-export async function spend(points: number, payerName?: string) {
-    if (!Number.isInteger(points)) throw new Error("'points' must be an integer");
-    if (points <= 0) throw new Error("'points' should be greater than 0");
+export async function spend(
+    points: number,
+    payerName?: string
+): Promise<{ payer: string; points: number }[]> {
+    if (!Number.isInteger(points)) throw new RangeError("'points' must be an integer");
+    if (points < 1) throw new RangeError("'points' must be greater than 0");
 
     // get a list of transactions to consider
     const transactions = await prisma.transaction.findMany({
@@ -79,42 +86,35 @@ export async function spend(points: number, payerName?: string) {
         orderBy: { timestamp: "asc" },
         include: { payer: { select: { name: true } } },
     });
-    console.log(transactions);
 
-    let pointsRemaining = points;
+    // create a local record of payers
+    // this is to save on database calls
+    const payers: Record<string, Payer & { originalBalance: number }> = {};
+    const dbPayers = await prisma.payer.findMany({
+        // if payerName is specified, only include that payer
+        where: payerName ? { name: payerName } : undefined,
+    });
+    for (const payer of dbPayers) {
+        const withOriginalBalance = payer as Payer & { originalBalance: number };
+        withOriginalBalance.originalBalance = payer.balance;
 
-    // create a record of all relevant payer names and their information.
-    // this is used to save on database calls for current balances, as well as keeping track of
-    // points that were used
-    type PayerRecord = Record<string, Payer & { originalBalance: number; pointsUsed: number }>;
-    const payers: PayerRecord = (
-        await prisma.payer.findMany({
-            // once again, if payerName is specified, only include that payer
-            where: payerName ? { name: payerName } : undefined,
-        })
-    ).reduce((result, payer) => {
-        // turn an array into an object with the key of payer.name
-        result[payer.name] = { ...payer, originalBalance: payer.balance, pointsUsed: 0 };
-        return result;
-    }, {} as PayerRecord);
+        payers[payer.name] = withOriginalBalance;
+    }
 
     // create a list of transactions to be deleted
     const transactionDeleteQueue: Prisma.PrismaPromise<any>[] = [];
 
-    for (let i = 0; i < transactions.length; i++) {
-        const transaction = transactions[i];
-
-        console.log(transaction.points, pointsRemaining);
-        // do we have to delete a transaction? or only subtract pointsRemaining
+    let pointsRemaining = points;
+    for (const transaction of transactions) {
+        // do we have to delete a transaction? or only subtract pointsRemaining in the transaction
         if (transaction.points <= pointsRemaining) {
             // queue the transaction to be deleted
             transactionDeleteQueue.push(
                 prisma.transaction.delete({ where: { id: transaction.id } })
             );
 
-            // update points remaining & payers record
+            // update payers record
             pointsRemaining -= transaction.points;
-            payers[transaction.payer.name].pointsUsed -= transaction.points;
             payers[transaction.payer.name].balance -= transaction.points;
 
             // transaction.points could equal pointsRemaining, in which case we are done
@@ -126,8 +126,7 @@ export async function spend(points: number, payerName?: string) {
                 data: { points: transaction.points - pointsRemaining },
             });
 
-            // update points remaining & payers record
-            payers[transaction.payer.name].pointsUsed -= pointsRemaining;
+            // update payers record
             payers[transaction.payer.name].balance -= pointsRemaining;
             pointsRemaining = 0;
 
@@ -135,34 +134,36 @@ export async function spend(points: number, payerName?: string) {
         }
     }
 
-    if (pointsRemaining != 0) throw new Error("not enough points to spend");
+    if (pointsRemaining != 0) throw new NotEnoughPointsError("not enough points");
 
     // delete the transactions
+    // prisma.$transaction() function name is a coincidence with the model name
     await prisma.$transaction(transactionDeleteQueue);
 
-    // update the payers
+    // update the payers and craft the return value
+    const result = [];
     const payerUpdates: Prisma.PrismaPromise<any>[] = [];
+
     for (const payerName in payers) {
-        // only queue updates of payers whose balance actually changed
+        // only payers whose balances were changed are relevant
         if (payers[payerName].balance != payers[payerName].originalBalance) {
+            // update in database
             payerUpdates.push(
                 prisma.payer.update({
                     where: { id: payers[payerName].id },
                     data: { balance: payers[payerName].balance },
                 })
             );
-        }
-    }
-    await prisma.$transaction(payerUpdates);
 
-    // craft the final return value
-    const result: { payer: string; points: number }[] = [];
-    for (const payerName in payers) {
-        // only include them in the result if any of their points were used
-        if (payers[payerName].pointsUsed != 0) {
-            result.push({ payer: payerName, points: payers[payerName].pointsUsed });
+            // add to result
+            result.push({
+                payer: payerName,
+                points: payers[payerName].balance - payers[payerName].originalBalance,
+            });
         }
     }
+
+    await prisma.$transaction(payerUpdates);
     return result;
 }
 
@@ -176,11 +177,20 @@ async function getOrCreatePayer(name: string): Promise<Payer> {
 
     if (existingPayer) return existingPayer;
 
-    const newPayer = await prisma.payer.create({ data: { name, balance: 0 } });
-    return newPayer;
+    return await prisma.payer.create({ data: { name, balance: 0 } });
 }
 
+/**
+ * Testing method to reset transactions and payers.
+ */
 export async function resetDb() {
     await prisma.transaction.deleteMany();
     await prisma.payer.deleteMany();
+}
+
+export class NotEnoughPointsError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "NotEnoughPointsError";
+    }
 }

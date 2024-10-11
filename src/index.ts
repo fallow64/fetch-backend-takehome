@@ -1,7 +1,22 @@
 import { Elysia, t } from "elysia";
-import { createTransaction, getBalances, resetDb, spend } from "./db";
+import { createTransaction, getBalances, NotEnoughPointsError, resetDb, spend } from "./db";
 
-const app = new Elysia()
+new Elysia()
+    .onStart((app) => {
+        console.log(`Server started at: ${app.server?.url}`);
+    })
+    .onError(({ code, set }) => {
+        // without this, any data validation errors in the body
+        // would be long and verbose
+
+        if (code === "VALIDATION") {
+            set.status = 400;
+            return "Bad Request";
+        } else if (code === "INTERNAL_SERVER_ERROR") {
+            set.status = 500;
+            return "Internal Server Error";
+        }
+    })
     .post(
         "/add",
         async ({ body, set }) => {
@@ -9,7 +24,19 @@ const app = new Elysia()
             if (body.points > 0) {
                 createTransaction(body.payer, body.points, body.timestamp);
             } else if (body.points < 0) {
-                spend(-body.points, body.payer);
+                try {
+                    spend(-body.points, body.payer);
+                } catch (e: unknown) {
+                    if (e instanceof NotEnoughPointsError) {
+                        set.status = 400;
+                        return "Not enough points";
+                    } else {
+                        console.error(e);
+
+                        set.status = 500;
+                        return "Internal Server Error";
+                    }
+                }
             }
         },
         {
@@ -25,28 +52,28 @@ const app = new Elysia()
     })
     .post(
         "/spend",
-        async ({ body }) => {
-            return await spend(body.points);
+        async ({ body, set }) => {
+            try {
+                return await spend(body.points);
+            } catch (e: unknown) {
+                if (e instanceof NotEnoughPointsError) {
+                    set.status = 400;
+                    return "Not enough points";
+                } else {
+                    console.error(e);
+
+                    set.status = 500;
+                    return "Internal Server Error";
+                }
+            }
         },
         {
             body: t.Object({
-                points: t.Integer(),
+                points: t.Integer({ minimum: 1 }),
             }),
         }
     )
-    .delete("/delete", async () => {
+    .delete("/reset", async () => {
         await resetDb();
-    })
-    .onError(({ code, error, set }) => {
-        // without this, any data validation errors in the body
-        // would be long and verbose
-        console.log(error, error.message);
-        if (code === "VALIDATION") {
-            set.status = 400;
-            return "400 Bad Request";
-        }
-    })
-    .onStart((app) => {
-        console.log(`Server started at: ${app.server?.url}`);
     })
     .listen(process.env.PORT ?? 8000);
