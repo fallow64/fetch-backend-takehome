@@ -32,7 +32,8 @@ The tests assess the core logic as well as the web server itself.
 
 # Endpoints
 
-Transaction definition: an element in a queue ordered by oldest first. Transactions are mutable.
+The term **transaction** will be used to refer to an element in a queue, with the oldest
+transactions first. They are mutable!
 
 ## POST /add
 
