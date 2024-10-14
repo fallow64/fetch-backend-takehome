@@ -12,36 +12,35 @@ than stumble through a language I'm not confident in.
 ----------------------------------------------------------------------------------------------------
 2. What are the advantages and disadvantages of your solution?
 
-Prisma / SQLite
-  - Pros:
-      - Easy-to-read database code with Prisma.
-      - Local file databases with SQLite, making local testing deployments easy.
-  - Cons:
-      - A highly-involved ORM like Prisma can lead to hidden inefficient queries.
-      - While SQLite is a reasonable choice for file-based databases, it is not optimal for
-        a cloud-based solution.
+Due to the small scope of the project, I didn't break down my code further, compared to something
+like an entire MVC pattern. Due to this, the logic inside of `db.ts` would need to be refactored
+if, say, I was tasked with attaching users to specific transactions.
 
-Elysia / Bun / TypeScript
-  - Pros:
-      - Types in JavaScript are essential for production code, and greatly improves developer
-        experience.
-      - Elysia is many times more faster than most other back-end (JS) frameworks.
-      - Bun is a faster JavaScript runtime than Node/Deno.
-  - Cons:
-      - Bun is a newer JavaScript runtime that only recently hit 1.0, and shouldn't be trusted
-        with production code.
-      - With Elysia, you are forced to define your routes weirdly (using their daisy-chaining),
-        making code harder to seperate and harder to on-board people with.
-      - Elysia also just hit 1.0, and has a smaller ecosystem of middleware than other options.
-      - Anything JavaScript will never run as fast as native code (like Go) written correctly.
+However, because of the small code size, the overall project is easier to understand.
 
-There is also a disadvantage of how I structured my code; I have a database logic file and a web
-logic file. An entire file controls every database interaction, so refactoring would be needed if
-the scope of the project was larger, like, for example, if users needed to be added and related
-to transactions.
+Technology Pros & Cons:
 
-I chose to structure it like this due to the small scope of the project. It would be overkill to
-seperate the logic into more files.
+  - Prisma / SQLite
+      - Pros:
+          - Easy-to-read database code with Prisma.
+          - Local file databases with SQLite, making local testing deployments easy.
+      - Cons:
+          - A highly-involved ORM like Prisma can lead to hidden inefficient queries.
+          - While SQLite is a reasonable choice for file-based databases, it is not optimal for
+            a cloud-based solution.
+
+  - Elysia / Bun / TypeScript
+      - Pros:
+          - Types in JavaScript are essential for production code, and greatly improves developer
+            experience.
+          - Elysia is many times more faster than most other back-end (JS) frameworks.
+          - Bun is a faster JavaScript runtime than Node/Deno.
+      - Cons:
+          - Bun and Elysia are very new technologies that both recently just hit 1.0, and probably
+            shouldn't be trusted with production code.
+          - With Elysia, you are forced to define your routes weirdly (using their daisy-chaining),
+            making code harder to seperate and harder to on-board people with.
+          - Anything JavaScript will never run as fast as native code (like Go) written correctly.
 
 ----------------------------------------------------------------------------------------------------
 3. What has been a favorite school/personal project thus far? What about it that challenged you?

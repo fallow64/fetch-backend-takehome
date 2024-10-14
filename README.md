@@ -29,3 +29,68 @@ Unfortunately, Elysia, the back-end framework used, does **NOT** support standar
 To run the unit tests, run `bun test`.
 
 The tests assess the core logic as well as the web server itself.
+
+# Endpoints
+
+Transaction definition: an element in a queue ordered by oldest first. Transactions are mutable.
+
+## POST /add
+
+Adds a transaction to the queue.
+
+-   Request Body:
+    ```
+    {
+        "payer": string,
+        "points": int,
+        "timestamp": Date,
+    }
+    ```
+-   Response: `200` if points > 0.
+    -   If points is negative, then `/add` will act like `/spend` but only acting on that
+        individual payer. Includes all errors of `/spend`.
+    -   If points is zero or non-integer, then the response will be `400 Bad Request`.
+
+## GET /balance
+
+Gets the balance of all the current payers.
+
+-   Request Body: none
+-   Response: `200` always, with JSON body of:
+
+    ```
+    {
+        "payer1": 500,
+        "payer2": 1000,
+    }
+    ```
+
+## POST /spend
+
+Spends a certain number of points, using the oldest payer's points first.
+
+-   Request Body:
+
+    ```
+    {
+        "points": int
+    }
+    ```
+
+-   Response: `200` if no errors, with JSON body of:
+
+    ```
+    [
+        {
+            "payer": "payer1",
+            "points": -500
+        },
+        {
+            "payer": "payer2",
+            "points": -1000
+        }
+    ]
+    ```
+
+    -   If there are not enough points, the response will be `400 Not Enough Points`.
+    -   If the provided points are less than 1 or non-integer, the response will be `400 Bad Request`.

@@ -93,7 +93,7 @@ async function trySpend(points: number, set: any, payer?: string): Promise<strin
     } catch (e: unknown) {
         if (e instanceof NotEnoughPointsError) {
             set.status = 400;
-            return "Not enough points";
+            return "Not Enough Points";
         } else {
             console.error(e);
 

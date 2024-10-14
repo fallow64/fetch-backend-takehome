@@ -34,7 +34,7 @@ describe("web", async () => {
 
         const body = await res.text();
         expect(res.status).toBe(400);
-        expect(body).toBe("Not enough points");
+        expect(body).toBe("Not Enough Points");
     });
 
     test("POST /add - zero", async () => {
