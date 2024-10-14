@@ -1,6 +1,6 @@
 import { Payer, Prisma, PrismaClient, Transaction } from "@prisma/client";
 
-const prisma = new PrismaClient({
+export const prisma = new PrismaClient({
     log: ["warn", "error"],
 });
 
@@ -17,7 +17,7 @@ const prisma = new PrismaClient({
 export async function createTransaction(
     payer: string,
     points: number,
-    timestamp: Date
+    timestamp: Date,
 ): Promise<Transaction> {
     if (!Number.isInteger(points)) throw new RangeError("'points' must be an integer");
     if (points < 1) throw new RangeError("'points' must be greater than 0");
@@ -49,8 +49,6 @@ export async function getBalances(): Promise<Record<string, number>> {
         select: { name: true, balance: true },
     });
 
-    console.log(payers);
-
     const result: Record<string, number> = {};
     for (const payer of payers) {
         result[payer.name] = payer.balance;
@@ -61,8 +59,28 @@ export async function getBalances(): Promise<Record<string, number>> {
 
 /**
  * Spends a non-zero positive number of points, starting from oldest points to the newest.
- * If 'payerName' is specified, then only that payer's points will be used. The return value
- * is in the form of:
+ * If 'payerName' is specified, then only that payer's points will be used.
+ *
+ * Algorithm:
+ *
+ * 1. Get transactions & payers information
+ *
+ * 2. Set remaining balance to the points argument
+ *
+ * 3. Repeat through transactions, from oldest to newest.
+ *
+ * 4. If the transaction's points <= remaining balance, subtract remaining balance by the
+ *    transaction's points and delete the transaction. If the points are equal, then also break.
+ *
+ * 5. If the transaction's points == remaining balance, subtract the transaction's points by
+ *    remaining balance, set remaining balance to 0, and break.
+ *
+ * 6. If there are still points remaining, then error.
+ *
+ * 7. Go through the payers, and if their balance changed, add them to the return value. Then,
+ *    return.
+ *
+ * The return value is in the form of:
  * ```
  * [{ "payer": "PAYER1", "points": -100 }, { "payer": "PAYER1", "points": -200 }]
  * ```
@@ -74,7 +92,7 @@ export async function getBalances(): Promise<Record<string, number>> {
  */
 export async function spend(
     points: number,
-    payerName?: string
+    payerName?: string,
 ): Promise<{ payer: string; points: number }[]> {
     if (!Number.isInteger(points)) throw new RangeError("'points' must be an integer");
     if (points < 1) throw new RangeError("'points' must be greater than 0");
@@ -110,7 +128,7 @@ export async function spend(
         if (transaction.points <= pointsRemaining) {
             // queue the transaction to be deleted
             transactionDeleteQueue.push(
-                prisma.transaction.delete({ where: { id: transaction.id } })
+                prisma.transaction.delete({ where: { id: transaction.id } }),
             );
 
             // update payers record
@@ -152,7 +170,7 @@ export async function spend(
                 prisma.payer.update({
                     where: { id: payers[payerName].id },
                     data: { balance: payers[payerName].balance },
-                })
+                }),
             );
 
             // add to result

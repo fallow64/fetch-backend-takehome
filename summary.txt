@@ -23,22 +23,41 @@ Prisma / SQLite
 
 Elysia / Bun / TypeScript
   - Pros:
-      - Types in JavaScript are an essential in 2024, and heavily improves developer experience.
-      - Elysia is many times more faster than most other back-end frameworks, and relies on Bun,
-        which is also faster than Node.
-      - Bun supports TypeScript out-of-the-box.
+      - Types in JavaScript are essential for production code, and greatly improves developer
+        experience.
+      - Elysia is many times more faster than most other back-end (JS) frameworks.
+      - Bun is a faster JavaScript runtime than Node/Deno.
   - Cons:
       - Bun is a newer JavaScript runtime that only recently hit 1.0, and shouldn't be trusted
-        with enterprise code.
-      - Elysia also just hit 1.0, and has a smaller ecosystem.
+        with production code.
+      - With Elysia, you are forced to define your routes weirdly (using their daisy-chaining),
+        making code harder to seperate and harder to on-board people with.
+      - Elysia also just hit 1.0, and has a smaller ecosystem of middleware than other options.
+      - Anything JavaScript will never run as fast as native code (like Go) written correctly.
 
-There is also a disadvantage of how I structed my code. I have two files: 'db.ts' and 'index.ts'.
-The database file has sole access to the database connection, so refactoring
-would be needed to give access to other/new files. Additionally, if I was given a task such as
-adding user authentication and relating transactions to users, I would have to split up 'db.ts'.
+There is also a disadvantage of how I structured my code; I have a database logic file and a web
+logic file. An entire file controls every database interaction, so refactoring would be needed if
+the scope of the project was larger, like, for example, if users needed to be added and related
+to transactions.
 
-I chose to structure it like this due to the small scope of the project. It would be overkill
-to seperate the logic into more files.
+I chose to structure it like this due to the small scope of the project. It would be overkill to
+seperate the logic into more files.
 
 ----------------------------------------------------------------------------------------------------
 3. What has been a favorite school/personal project thus far? What about it that challenged you?
+
+My favorite project so far was a programming language I made called "Flama". When I was a kid,
+there was a Minecraft coding platform that was designed for beginners and kids, and through that
+platform, I learned how to code. As I grew older, I thought it'd be a fun project to make the
+in-game code more manageable by creating a custom programming language and converting it to the
+block code.
+
+I found a book called Crafting Interpreters by Bob Nystrom that I really enjoyed reading, and so I
+reapplied the concepts for my own language, and started creating.
+
+I had a lot of attempts before creating Flama. The most challenging part for me was motivation;
+I would make it half-way through and be making good progress, but other responsibilities took up
+time, so I'd eventually forget about it. Then, a month later, the programming bug would bite again,
+and so I'd try a new attempt, with a new technology (like making it in Go, Rust, TypeScript, etc).
+I learned a lot through this process, but at the end of the day, I didn't have anything to show for
+it. Finally, during the summer, I was able to power through it, and have a completed project.

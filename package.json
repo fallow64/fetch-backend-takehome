@@ -11,6 +11,7 @@
     },
     "devDependencies": {
         "bun-types": "latest",
+        "prettier": "^3.3.3",
         "prisma": "^5.20.0"
     },
     "module": "src/index.js",
