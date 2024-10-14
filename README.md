@@ -94,4 +94,4 @@ Spends a certain number of points, using the oldest payer's points first.
     ```
 
     -   If there are not enough points, the response will be `400 Not Enough Points`.
-    -   If the provided points are less than 1 or non-integer, the response will be `400 Bad Request`.
+    -   If `points` is less than 1 or a non-integer, the response will be `400 Bad Request`.
