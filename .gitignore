@@ -3,9 +3,6 @@
 /.pnp
 .pnp.js
 
-# real .env file (may contain credentials)
-.env
-
 # production
 /build
 
