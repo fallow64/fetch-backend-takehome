@@ -47,17 +47,18 @@ seperate the logic into more files.
 3. What has been a favorite school/personal project thus far? What about it that challenged you?
 
 My favorite project so far was a programming language I made called "Flama". When I was a kid,
-there was a Minecraft coding platform that was designed for beginners and kids, and through that
-platform, I learned how to code. As I grew older, I thought it'd be a fun project to make the
-in-game code more manageable by creating a custom programming language and converting it to the
-block code.
+there was a Minecraft coding platform called DiamondFire that was created for beginners and kids,
+and through that platform, I learned how to code. As I grew older, I thought it'd be a fun project
+to make the in-game code more manageable by creating a custom programming language and converting
+it to the block code.
 
 I found a book called Crafting Interpreters by Bob Nystrom that I really enjoyed reading, and so I
 reapplied the concepts for my own language, and started creating.
 
-I had a lot of attempts before creating Flama. The most challenging part for me was motivation;
-I would make it half-way through and be making good progress, but other responsibilities took up
-time, so I'd eventually forget about it. Then, a month later, the programming bug would bite again,
-and so I'd try a new attempt, with a new technology (like making it in Go, Rust, TypeScript, etc).
-I learned a lot through this process, but at the end of the day, I didn't have anything to show for
-it. Finally, during the summer, I was able to power through it, and have a completed project.
+I had a lot of attempts before creating Flama. The most challenging part for me was seeing it
+through to the end; I would make it half-way through and be making good progress, but other
+responsibilities took up time, so I'd eventually forget about it. Then, a month later, the
+programming bug would bite again, and so I'd try a new attempt, with a new technology (like making
+it in Go, Rust, TypeScript, etc). I learned a lot through this process, but at the end of the day,
+I didn't have anything to show for it. Finally, during the summer, I was able to power through it,
+and I ended up with a completed project that I was passionate about.
